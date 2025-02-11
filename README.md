@@ -24,7 +24,7 @@ Mongo Studio is a comprehensive web application for managing and interacting wit
 1. Clone the repository
 
 ```bash
-git clone https://github.com/yourusername/mongo-studio.git
+git clone https://github.com/hshanjra/mongo-studio.git
 cd mongo-studio
 ```
 
