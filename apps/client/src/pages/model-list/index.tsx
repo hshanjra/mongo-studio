@@ -17,6 +17,7 @@ import {
 import { Delete, Edit, Visibility, Add } from "@mui/icons-material";
 import { useQuery, useMutation, useQueryClient } from "react-query";
 import axios from "axios";
+import Loading from "../../components/loading";
 
 interface Model {
   name: string;
@@ -32,19 +33,28 @@ export default function ModelList() {
     return response.data;
   });
 
-  const deleteModel = useMutation(
+  const { mutate: deleteModel, isLoading: isDeleting } = useMutation(
     async (modelName: string) => {
+      // Delete the model
       await axios.delete(`/api/models/${modelName}`);
+      
+      // Delete the associated collection
+      await axios.delete(`/api/collections/${modelName}`);
     },
     {
       onSuccess: () => {
-        queryClient.invalidateQueries("models");
+        queryClient.invalidateQueries('models');
+        queryClient.invalidateQueries('collections');
       },
+      onError: (error: any) => {
+        console.error('Error deleting model or collection:', error);
+        // Optionally show an error toast or notification
+      }
     }
   );
 
   if (isLoading) {
-    return <Typography>Loading...</Typography>;
+    return <Loading message="Loading models..." fullScreen />;
   }
 
   if (!models) {
@@ -109,7 +119,7 @@ export default function ModelList() {
                             "Are you sure you want to delete this model?"
                           )
                         ) {
-                          deleteModel.mutate(model.name);
+                          deleteModel(model.name);
                         }
                       }}
                       color="error"

@@ -53,7 +53,7 @@ export default function ModelCreate() {
 
   const navigate = useNavigate();
 
-  const createModel = useMutation(
+  const { mutate: createModel, isLoading } = useMutation(
     async () => {
       try {
         // Build a proper schema object
@@ -159,7 +159,7 @@ export default function ModelCreate() {
 
     // TODO: Send model creation request to backend
     setError("");
-    createModel.mutate();
+    createModel();
 
     console.log("Creating model:", {
       name: modelName,
@@ -347,9 +347,9 @@ export default function ModelCreate() {
             variant="contained"
             color="primary"
             onClick={handleSubmit}
-            disabled={!modelName || fields.length === 0}
+            disabled={!modelName || fields.length === 0 || isLoading}
           >
-            Create Model
+            {isLoading ? "Creating..." : "Create Model"}
           </Button>
         </Box>
       </Paper>

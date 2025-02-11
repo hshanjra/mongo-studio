@@ -10,7 +10,7 @@ import {
   ListItemIcon,
   ListItemText,
 } from "@mui/material";
-import { Storage, Add, Schema, ListAlt } from "@mui/icons-material";
+import { Storage, Add, ListAlt } from "@mui/icons-material";
 import { ReactNode } from "react";
 
 const drawerWidth = 240;
