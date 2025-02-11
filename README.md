@@ -69,4 +69,4 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 Hanspreet Singh - hshanjra.dev@gmail.com
 
-Project Link: [https://github.com/yourusername/mongo-studio](https://github.com/hshanjra/mongo-studio)
+Project Link: [https://github.com/hshanjra/mongo-studio](https://github.com/hshanjra/mongo-studio)
