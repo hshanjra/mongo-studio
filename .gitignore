@@ -40,3 +40,6 @@ yarn-error.log*
 
 # build output
 dist/
+
+# Generated models
+generated/
