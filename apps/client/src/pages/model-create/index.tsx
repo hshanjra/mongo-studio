@@ -1,30 +1,20 @@
 import { useState } from "react";
-import {
-  Box,
-  Button,
-  Container,
-  Grid,
-  IconButton,
-  Paper,
-  Select,
-  TextField,
-  Typography,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Checkbox,
-  FormControlLabel,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-} from "@mui/material";
-import { Delete, Add } from "@mui/icons-material";
-import { useMutation } from "react-query";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Plus, Trash2 } from "lucide-react";
+import { Table, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { useCreateModel } from "@/hooks/api/models";
 
 // Define the structure for a model field
 interface ModelField {
@@ -49,57 +39,62 @@ export default function ModelCreate() {
     unique: false,
     trim: false,
   });
-  const [error, setError] = useState("");
 
   const navigate = useNavigate();
 
-  const { mutate: createModel, isLoading } = useMutation(
-    async () => {
-      try {
-        // Build a proper schema object
-        const schemaDefinition = fields.reduce(
-          (acc, field) => {
-            const fieldSchema: any = { type: field.type };
-
-            // Add validation properties
-            if (field.required) fieldSchema.required = true;
-            if (field.unique) fieldSchema.unique = true;
-            if (field.trim && field.type === "String") fieldSchema.trim = true;
-
-            // Optional additional properties
-            if (field.min !== undefined) fieldSchema.min = field.min;
-            if (field.max !== undefined) fieldSchema.max = field.max;
-            if (field.default !== undefined)
-              fieldSchema.default = field.default;
-            if (field.enum !== undefined) fieldSchema.enum = field.enum;
-
-            acc[field.name] = fieldSchema;
-            return acc;
-          },
-          {} as Record<string, any>
-        );
-
-        const response = await axios.post("/api/models", {
-          name: modelName,
-          schema: schemaDefinition, // Send as parsed object, not stringified
-        });
-        return response.data;
-      } catch (err) {
-        if (err instanceof Error) {
-          throw new Error(err.message);
-        }
-        throw new Error("An error occurred while creating the model");
-      }
+  const { mutate: createModel, isLoading } = useCreateModel({
+    onSuccess: () => {
+      navigate(`/models/${modelName}`);
     },
-    {
-      onSuccess: () => {
-        navigate("/models");
-      },
-      onError: (err: Error) => {
-        setError(err.message);
-      },
-    }
-  );
+  });
+
+  // const { mutate: createModel, isLoading } = useMutation(
+  //   async () => {
+  //     try {
+  //       // Build a proper schema object
+  //       const schemaDefinition = fields.reduce(
+  //         (acc, field) => {
+  //           const fieldSchema: any = { type: field.type };
+
+  //           // Add validation properties
+  //           if (field.required) fieldSchema.required = true;
+  //           if (field.unique) fieldSchema.unique = true;
+  //           if (field.trim && field.type === "String") fieldSchema.trim = true;
+
+  //           // Optional additional properties
+  //           if (field.min !== undefined) fieldSchema.min = field.min;
+  //           if (field.max !== undefined) fieldSchema.max = field.max;
+  //           if (field.default !== undefined)
+  //             fieldSchema.default = field.default;
+  //           if (field.enum !== undefined) fieldSchema.enum = field.enum;
+
+  //           acc[field.name] = fieldSchema;
+  //           return acc;
+  //         },
+  //         {} as Record<string, any>
+  //       );
+
+  //       const response = await axios.post("/api/models", {
+  //         name: modelName,
+  //         schema: schemaDefinition, // Send as parsed object, not stringified
+  //       });
+  //       return response.data;
+  //     } catch (err) {
+  //       if (err instanceof Error) {
+  //         throw new Error(err.message);
+  //       }
+  //       throw new Error("An error occurred while creating the model");
+  //     }
+  //   },
+  //   {
+  //     onSuccess: () => {
+  //       navigate("/models");
+  //     },
+  //     onError: (err: Error) => {
+  //       setError(err.message);
+  //     },
+  //   }
+  // );
 
   // Available field types
   const fieldTypes = [
@@ -152,14 +147,38 @@ export default function ModelCreate() {
       return;
     }
 
+    if (modelName.includes(" ")) {
+      alert("Model name must not contain any spaces.");
+      return;
+    }
+
     if (fields.length === 0) {
       alert("At least one field is required");
       return;
     }
 
-    // TODO: Send model creation request to backend
-    setError("");
-    createModel();
+    const schemaDefinition = fields.reduce(
+      (acc, field) => {
+        const fieldSchema: any = { type: field.type };
+
+        // Add validation properties
+        if (field.required) fieldSchema.required = true;
+        if (field.unique) fieldSchema.unique = true;
+        if (field.trim && field.type === "String") fieldSchema.trim = true;
+
+        // Optional additional properties
+        if (field.min !== undefined) fieldSchema.min = field.min;
+        if (field.max !== undefined) fieldSchema.max = field.max;
+        if (field.default !== undefined) fieldSchema.default = field.default;
+        if (field.enum !== undefined) fieldSchema.enum = field.enum;
+
+        acc[field.name] = fieldSchema;
+        return acc;
+      },
+      {} as Record<string, any>
+    );
+
+    createModel({ name: modelName, schema: schemaDefinition });
 
     console.log("Creating model:", {
       name: modelName,
@@ -168,191 +187,154 @@ export default function ModelCreate() {
   };
 
   return (
-    <Container maxWidth="lg">
-      <Typography variant="h4" gutterBottom>
-        Create New Model
-      </Typography>
+    <div className="container mx-auto py-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Create New Model</h1>
+      </div>
 
-      <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
-        <Grid container spacing={2}>
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label="Model Name"
-              variant="outlined"
-              value={modelName}
-              onChange={(e) => setModelName(e.target.value)}
-              placeholder="Enter model name (e.g., User, Product)"
-            />
-          </Grid>
-        </Grid>
-      </Paper>
+      <Card>
+        <CardHeader>
+          <CardTitle>Model Details</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="modelName">Model Name</Label>
+              <Input
+                id="modelName"
+                value={modelName}
+                onChange={(e) => setModelName(e.target.value)}
+                placeholder="Enter model name (e.g., User, Product)"
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-      <Paper elevation={3} sx={{ p: 3 }}>
-        <Typography variant="h6" gutterBottom>
-          Model Fields
-        </Typography>
-
-        {/* New Field Input Form */}
-        <Grid container spacing={2} sx={{ mb: 2 }}>
-          <Grid item xs={4}>
-            <TextField
-              fullWidth
-              label="Field Name"
-              variant="outlined"
-              value={newField.name}
-              onChange={(e) =>
-                setNewField({
-                  ...newField,
-                  name: e.target.value,
-                })
-              }
-            />
-          </Grid>
-          <Grid item xs={4}>
-            <FormControl fullWidth variant="outlined">
-              <InputLabel>Field Type</InputLabel>
-              <Select
-                value={newField.type}
-                label="Field Type"
-                onChange={(e) =>
-                  setNewField({
-                    ...newField,
-                    type: e.target.value,
-                  })
-                }
-              >
-                {fieldTypes.map((type) => (
-                  <MenuItem key={type} value={type}>
-                    {type}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-
-          <Grid item xs={4} className="flex flex-col">
-            <Box
-              height="100%"
-              display="flex"
-              alignItems="center"
-              className="w-full"
-            >
-              <FormControlLabel
-                control={
+      <Card>
+        <CardHeader>
+          <CardTitle>Model Fields</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-6">
+            {/* New Field Form */}
+            <div className="grid gap-4 md:grid-cols-4">
+              <div className="grid gap-2">
+                <Label htmlFor="fieldName">Field Name</Label>
+                <Input
+                  id="fieldName"
+                  placeholder="e.g., first_name"
+                  value={newField.name}
+                  onChange={(e) =>
+                    setNewField({ ...newField, name: e.target.value })
+                  }
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Field Type</Label>
+                <Select
+                  value={newField.type}
+                  onValueChange={(value) =>
+                    setNewField({ ...newField, type: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {fieldTypes.map((type) => (
+                      <SelectItem key={type} value={type}>
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
                   <Checkbox
+                    id="required"
                     checked={newField.required}
-                    onChange={(e) =>
-                      setNewField({ ...newField, required: e.target.checked })
+                    onCheckedChange={(checked) =>
+                      setNewField({ ...newField, required: checked as boolean })
                     }
                   />
-                }
-                label="Required"
-                className="w-full"
-              />
-            </Box>
-          </Grid>
-          <Grid item xs={4} className="flex flex-col">
-            <Box
-              height="100%"
-              display="flex"
-              alignItems="center"
-              className="w-full"
-            >
-              <FormControlLabel
-                control={
+                  <Label htmlFor="required">Required</Label>
+                </div>
+                <div className="flex items-center space-x-2">
                   <Checkbox
+                    id="unique"
                     checked={newField.unique}
-                    onChange={(e) =>
-                      setNewField({ ...newField, unique: e.target.checked })
+                    onCheckedChange={(checked) =>
+                      setNewField({ ...newField, unique: checked as boolean })
                     }
                   />
-                }
-                label="Unique"
-                className="w-full"
-              />
-            </Box>
-          </Grid>
-          <Grid item xs={4} className="flex flex-col">
-            <Box
-              height="100%"
-              display="flex"
-              alignItems="center"
-              className="w-full"
-            >
-              <FormControlLabel
-                control={
+                  <Label htmlFor="unique">Unique</Label>
+                </div>
+                <div className="flex items-center space-x-2">
                   <Checkbox
+                    id="trim"
                     checked={newField.trim}
-                    onChange={(e) =>
-                      setNewField({ ...newField, trim: e.target.checked })
+                    onCheckedChange={(checked) =>
+                      setNewField({ ...newField, trim: checked as boolean })
                     }
                   />
-                }
-                label="Trim"
-                className="w-full"
-              />
-            </Box>
-          </Grid>
-          <Grid item xs={12}>
-            <Button
-              variant="contained"
-              color="primary"
-              startIcon={<Add />}
-              onClick={handleAddField}
-            >
-              Add Field
-            </Button>
-          </Grid>
-        </Grid>
+                  <Label htmlFor="trim">Trim</Label>
+                </div>
+              </div>
+              <Button onClick={handleAddField} className="self-end">
+                <Plus className="w-4 h-4 mr-2" /> Add Field
+              </Button>
+            </div>
 
-        {/* Fields Table */}
-        <TableContainer component={Paper} sx={{ mt: 2 }}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell>Type</TableCell>
-                <TableCell>Required</TableCell>
-                <TableCell>Unique</TableCell>
-                <TableCell>Trim</TableCell>
-                <TableCell>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {fields.map((field, index) => (
-                <TableRow key={index}>
-                  <TableCell>{field.name}</TableCell>
-                  <TableCell>{field.type}</TableCell>
-                  <TableCell>{field.required ? "Yes" : "No"}</TableCell>
-                  <TableCell>{field.unique ? "Yes" : "No"}</TableCell>
-                  <TableCell>{field.trim ? "Yes" : "No"}</TableCell>
-                  <TableCell>
-                    <IconButton
-                      color="error"
-                      onClick={() => handleRemoveField(field)}
-                    >
-                      <Delete />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+            {/* Fields Table */}
+            <div className="border rounded-lg">
+              <Table className="w-full">
+                <TableHeader>
+                  <TableRow className="border-b">
+                    <TableHead className="text-left p-3">Name</TableHead>
+                    <TableHead className="text-left p-3">Type</TableHead>
+                    <TableHead className="text-left p-3">Required</TableHead>
+                    <TableHead className="text-left p-3">Unique</TableHead>
+                    <TableHead className="text-left p-3">Trim</TableHead>
+                    <TableHead className="text-left p-3">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <tbody>
+                  {fields.map((field, index) => (
+                    <tr key={index} className="border-b">
+                      <td className="p-3">{field.name}</td>
+                      <td className="p-3">{field.type}</td>
+                      <td className="p-3">{field.required ? "Yes" : "No"}</td>
+                      <td className="p-3">{field.unique ? "Yes" : "No"}</td>
+                      <td className="p-3">{field.trim ? "Yes" : "No"}</td>
+                      <td className="p-3">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveField(field)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </Table>
+            </div>
 
-        {/* Submit Button */}
-        <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end" }}>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleSubmit}
-            disabled={!modelName || fields.length === 0 || isLoading}
-          >
-            {isLoading ? "Creating..." : "Create Model"}
-          </Button>
-        </Box>
-      </Paper>
-    </Container>
+            {/* Submit Button */}
+            <div className="flex justify-end">
+              <Button
+                onClick={handleSubmit}
+                disabled={!modelName || fields.length === 0 || isLoading}
+              >
+                {isLoading ? "Creating..." : "Create Model"}
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
